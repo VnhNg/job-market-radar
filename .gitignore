@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Env
+.env
+
+# Data (keep raw downloads out of git)
+data/raw/
+data/processed/
