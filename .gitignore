@@ -8,5 +8,5 @@ __pycache__/
 .env
 
 # Data (keep raw downloads out of git)
-data/raw/
-data/processed/
+data/
+notebooks/

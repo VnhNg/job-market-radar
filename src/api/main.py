@@ -78,7 +78,7 @@ def geo_by_channel(channel: Optional[str] = None):
     FROM expanded
     WHERE area IS NOT NULL AND array_length(area) >= 2
     GROUP BY ch, area[2]
-    ORDER BY ch, jobs DESC;
+    ORDER BY jobs DESC, bundesland;
     """
     con = get_con()
     df = con.execute(sql).fetchdf()
