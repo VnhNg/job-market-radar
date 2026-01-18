@@ -1,0 +1,15 @@
+ollama:
+  base_url: "http://localhost:11434"
+  model: "qwen2.5:3b"
+  temperature: 0.2
+
+api:
+  base_url: "http://127.0.0.1:8000"
+
+limits:
+  max_rows_to_llm: 50
+  max_chars_to_llm: 12000
+  max_print_rows: 20
+
+logging:
+  calls_log: "logs/agent_calls.jsonl"

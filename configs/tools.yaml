@@ -1,0 +1,27 @@
+tools:
+  - id: definitions
+    title: Glossary
+    method: GET
+    endpoint: /definitions
+
+  - id: replication_across_cities
+    title: Replication across cities
+    method: GET
+    endpoint: /insights/replication-across-cities
+    params:
+      - name: min_locations
+        type: int
+        required: false
+        default: 2
+        help: "Only show roles posted in at least this many distinct locations."
+
+  - id: geo_by_channel
+    title: Geo by channel (Bundesland)
+    method: GET
+    endpoint: /insights/geo-by-channel
+    params:
+      - name: channel
+        type: str
+        required: false
+        default: ""
+        help: "Filter to one channel, e.g. 'praktikum data'. Leave blank for all."
