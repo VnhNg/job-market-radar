@@ -10,11 +10,14 @@ from typing import Any, Optional
 
 import pandas as pd
 
+from text_fingerprint import load_fingerprint_config, fingerprint_md5
+
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW_INDEX = PROJECT_ROOT / "data" / "raw" / "adzuna" / "de" / "jobs_search" / "_index.csv"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 REGISTRY_PATH = PROCESSED_DIR / "registry.jsonl"
-
+FP_CFG = load_fingerprint_config()
 
 def request_path_from_response(response_path: Path) -> Path:
     return response_path.with_name(
@@ -67,6 +70,7 @@ def _job_to_row(job: dict, *, what: str, fetched_at: Optional[str], req_file: Pa
         "fetched_at": fetched_at,
         "raw_request_file": relpath(req_file),
         "raw_response_file": relpath(res_file),
+        "desc_sig": fingerprint_md5(job.get("description", ""), FP_CFG),
     }
 
     # Optional + source-specific fields (only if present)

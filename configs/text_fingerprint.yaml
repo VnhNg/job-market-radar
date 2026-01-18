@@ -1,0 +1,7 @@
+text_fingerprint:
+  prefix_len: 300
+  lowercase: true
+  collapse_whitespace: true
+  strip_trailing_ellipsis: true
+  fix_u00_sequences: true
+  unicode_form: "NFKC"
