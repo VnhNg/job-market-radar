@@ -74,6 +74,17 @@ def main() -> int:
     else:
         print("Raw index CSV not found; skipped loading raw index.")
 
+    # Apply semantic views (sql/semantic/*.sql)
+    semantic_dir = PROJECT_ROOT / "sql" / "semantic"
+    if semantic_dir.exists():
+        sql_files = sorted(semantic_dir.glob("*.sql"))
+        for p in sql_files:
+            con.execute(p.read_text(encoding="utf-8"))
+        print(f"Applied semantic SQL: {len(sql_files)} file(s) from {semantic_dir}")
+    else:
+        print(f"Semantic dir not found; skipped: {semantic_dir}")
+
+
     con.close()
     return 0
 
