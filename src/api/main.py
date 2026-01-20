@@ -3,6 +3,13 @@ import duckdb
 from fastapi import FastAPI, Query 
 from typing import Optional
 
+from src.api.analytics.breakdown_builder import build_breakdown_sql
+from src.api.analytics.detail_builder import build_detail_sql
+from src.api.analytics.sample_builder import build_sample_sql
+from src.api.analytics.spec import BREAKDOWN_BASES, DETAIL_BASES
+
+from src.api.duckdb_client import query as duckdb_query
+
 
 app = FastAPI(title="Job Market Radar API", version="0.1.0")
 
@@ -105,3 +112,133 @@ def definitions():
             "Role mix classification (if used) is rule-based unless otherwise stated."
         ]
     }
+
+@app.get("/analytics/breakdown")
+def analytics_breakdown(
+    base: str = Query(..., description="jobs | replication"),
+    metric: str = Query(...),
+    dimensions: str = Query(..., description="comma-separated, max 2, e.g. 'channel,bundesland'"),
+    channel: Optional[str] = None,
+    bundesland: Optional[str] = None,
+    company: Optional[str] = None,
+    source: Optional[str] = None,
+    min_locations: Optional[int] = None,
+    limit: int = 20,
+    dry_run: bool = False,
+):
+    all_filters = {
+        "channel": channel,
+        "bundesland": bundesland,
+        "company": company,
+        "source": source,
+        "min_locations": min_locations,
+    }
+
+    allowed = set(BREAKDOWN_BASES[base]["filters"].keys())
+    filters = {k: v for k, v in all_filters.items() if (k in allowed and v is not None)}
+
+    sql, params = build_breakdown_sql(
+        base=base,
+        metric=metric,
+        dimensions_csv=dimensions,
+        filters=filters,
+        limit=limit,
+    )
+
+    if dry_run:
+        return {"sql": sql, "params": params}
+
+    rows = duckdb_query(sql, params)
+    return {
+        "base": base,
+        "metric": metric,
+        "dimensions": [d.strip() for d in dimensions.split(",") if d.strip()],
+        "filters": filters,
+        "rows": rows,
+    }
+
+@app.get("/analytics/detail")
+def analytics_detail(
+    base: str = Query(..., description="jobs | replication"),
+    select: str = Query(..., description="comma-separated columns, allowlisted per base"),
+    channel: Optional[str] = None,
+    bundesland: Optional[str] = None,
+    company: Optional[str] = None,
+    source: Optional[str] = None,
+    min_locations: Optional[int] = None,
+    limit: int = 20,
+    dry_run: bool = False,
+):
+    all_filters = {
+        "channel": channel,
+        "bundesland": bundesland,
+        "company": company,
+        "source": source,
+        "min_locations": min_locations,
+    }
+
+    allowed = set(DETAIL_BASES[base]["filters"].keys())
+    filters = {k: v for k, v in all_filters.items() if (k in allowed and v is not None)}
+
+    sql, params = build_detail_sql(
+        base=base,
+        select_csv=select,
+        filters=filters,
+        limit=limit,
+    )
+
+    if dry_run:
+        return {"sql": sql, "params": params}
+
+    rows = duckdb_query(sql, params)
+    return {
+        "base": base,
+        "select": [c.strip() for c in select.split(",") if c.strip()],
+        "filters": filters,
+        "rows": rows,
+    }
+
+@app.get("/analytics/sample")
+def analytics_sample(
+    base: str = Query(..., description="jobs | replication"),
+    select: str = Query(..., description="comma-separated columns, allowlisted per base"),
+    seed: int = 42,
+    channel: Optional[str] = None,
+    bundesland: Optional[str] = None,
+    company: Optional[str] = None,
+    source: Optional[str] = None,
+    min_locations: Optional[int] = None,
+    limit: int = 20,
+    dry_run: bool = False,
+):
+    all_filters = {
+        "channel": channel,
+        "bundesland": bundesland,
+        "company": company,
+        "source": source,
+        "min_locations": min_locations,
+    }
+
+    allowed = set(DETAIL_BASES[base]["filters"].keys())
+    filters = {k: v for k, v in all_filters.items() if (k in allowed and v is not None)}
+
+    sql, params = build_sample_sql(
+        base=base,
+        select_csv=select,
+        filters=filters,
+        seed=seed,
+        limit=limit,
+    )
+
+    if dry_run:
+        return {"sql": sql, "params": params}
+
+    rows = duckdb_query(sql, params)
+    return {
+        "base": base,
+        "select": [c.strip() for c in select.split(",") if c.strip()],
+        "seed": seed,
+        "filters": filters,
+        "rows": rows,
+    }
+
