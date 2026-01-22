@@ -242,3 +242,24 @@ def analytics_sample(
         "rows": rows,
     }
 
+@app.get("/analytics/semantic_spec")
+def analytics_semantic_spec():
+    breakdown = {}
+    for base, spec in BREAKDOWN_BASES.items():
+        breakdown[base] = {
+            "metrics": sorted(spec["metrics"].keys()),
+            "dimensions": sorted(spec["dimensions"]),
+            "filters": {k: v["type"] for k, v in spec["filters"].items()},
+        }
+
+    detail = {}
+    for base, spec in DETAIL_BASES.items():
+        detail[base] = {
+            "columns": sorted(spec["columns"]),
+            "filters": {k: v["type"] for k, v in spec["filters"].items()},
+        }
+
+    return {"breakdown": breakdown, "detail": detail}
+
+
+
