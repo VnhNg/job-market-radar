@@ -7,6 +7,16 @@ from src.api.analytics.breakdown_builder import build_breakdown_sql
 from src.api.analytics.detail_builder import build_detail_sql
 from src.api.analytics.sample_builder import build_sample_sql
 from src.api.analytics.spec import BREAKDOWN_BASES, DETAIL_BASES
+from src.api.analytics.query_docs import (
+    BaseParam,
+    MetricParam,
+    DimensionsParam,
+    SelectParam,
+    LimitParam,
+    DryRunParam,
+    SeedParam,
+    CommonFilters,
+)
 
 from src.api.duckdb_client import query as duckdb_query
 
@@ -115,25 +125,13 @@ def definitions():
 
 @app.get("/analytics/breakdown")
 def analytics_breakdown(
-    base: str = Query(..., description="jobs | replication"),
-    metric: str = Query(...),
-    dimensions: str = Query(..., description="comma-separated, max 2, e.g. 'channel,bundesland'"),
-    channel: Optional[str] = None,
-    bundesland: Optional[str] = None,
-    company: Optional[str] = None,
-    source: Optional[str] = None,
-    min_locations: Optional[int] = None,
-    limit: int = 20,
-    dry_run: bool = False,
+    base: BaseParam,
+    metric: MetricParam,
+    dimensions: DimensionsParam,
+    all_filters: CommonFilters,
+    limit: LimitParam = 20,
+    dry_run: DryRunParam = False,
 ):
-    all_filters = {
-        "channel": channel,
-        "bundesland": bundesland,
-        "company": company,
-        "source": source,
-        "min_locations": min_locations,
-    }
-
     allowed = set(BREAKDOWN_BASES[base]["filters"].keys())
     filters = {k: v for k, v in all_filters.items() if (k in allowed and v is not None)}
 
@@ -159,24 +157,12 @@ def analytics_breakdown(
 
 @app.get("/analytics/detail")
 def analytics_detail(
-    base: str = Query(..., description="jobs | replication"),
-    select: str = Query(..., description="comma-separated columns, allowlisted per base"),
-    channel: Optional[str] = None,
-    bundesland: Optional[str] = None,
-    company: Optional[str] = None,
-    source: Optional[str] = None,
-    min_locations: Optional[int] = None,
-    limit: int = 20,
-    dry_run: bool = False,
+    base: BaseParam,
+    select: SelectParam,
+    all_filters: CommonFilters,
+    limit: LimitParam = 20,
+    dry_run: DryRunParam = False,
 ):
-    all_filters = {
-        "channel": channel,
-        "bundesland": bundesland,
-        "company": company,
-        "source": source,
-        "min_locations": min_locations,
-    }
-
     allowed = set(DETAIL_BASES[base]["filters"].keys())
     filters = {k: v for k, v in all_filters.items() if (k in allowed and v is not None)}
 
@@ -200,25 +186,13 @@ def analytics_detail(
 
 @app.get("/analytics/sample")
 def analytics_sample(
-    base: str = Query(..., description="jobs | replication"),
-    select: str = Query(..., description="comma-separated columns, allowlisted per base"),
-    seed: int = 42,
-    channel: Optional[str] = None,
-    bundesland: Optional[str] = None,
-    company: Optional[str] = None,
-    source: Optional[str] = None,
-    min_locations: Optional[int] = None,
-    limit: int = 20,
-    dry_run: bool = False,
+    base: BaseParam,
+    select: SelectParam,
+    all_filters: CommonFilters,
+    seed: SeedParam = 42,
+    limit: LimitParam = 20,
+    dry_run: DryRunParam = False,
 ):
-    all_filters = {
-        "channel": channel,
-        "bundesland": bundesland,
-        "company": company,
-        "source": source,
-        "min_locations": min_locations,
-    }
-
     allowed = set(DETAIL_BASES[base]["filters"].keys())
     filters = {k: v for k, v in all_filters.items() if (k in allowed and v is not None)}
 
