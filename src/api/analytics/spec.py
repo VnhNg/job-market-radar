@@ -1,3 +1,22 @@
+BASES_DOCS = {
+    "jobs": {
+        "grain": "row-level job postings (v_jobs)",
+        "good_for": [
+            "counts/distribution by channel/bundesland/company/source",
+            "drill-through to example postings",
+        ],
+        "fields": ["job_id", "title", "company", "location", "url", "created_at", "channel", "bundesland"],
+    },
+    "replication": {
+        "grain": "role_signature groups (v_replication_groups)",
+        "good_for": [
+            "reposting intensity by company/channel",
+            "multi-location repost patterns",
+        ],
+        "fields": ["channel", "company", "role_signature", "postings", "distinct_locations", "repost_ratio"],
+    },
+}
+
 BREAKDOWN_BASES = {
     "jobs": {
         "table": "v_jobs",

@@ -6,7 +6,8 @@ from typing import Optional
 from src.api.analytics.breakdown_builder import build_breakdown_sql
 from src.api.analytics.detail_builder import build_detail_sql
 from src.api.analytics.sample_builder import build_sample_sql
-from src.api.analytics.spec import BREAKDOWN_BASES, DETAIL_BASES
+from src.api.analytics.spec import BASES_DOCS, BREAKDOWN_BASES, DETAIL_BASES
+from src.api.analytics.op_docs import OP_DOCS
 from src.api.analytics.query_docs import (
     BaseParam,
     MetricParam,
@@ -106,7 +107,12 @@ def geo_by_channel(channel: Optional[str] = None):
 
     return {"rows": df.to_dict(orient="records")}
 
-@app.get("/definitions")
+@app.get(
+    "/definitions",
+    summary=OP_DOCS["definitions"]["summary"],
+    description=OP_DOCS["definitions"]["user"],
+    openapi_extra={"x-job-market-llm-description": OP_DOCS["definitions"]["llm"]},
+)
 def definitions():
     """
     Metric/field glossary for users and the assistant.
@@ -123,7 +129,12 @@ def definitions():
         ]
     }
 
-@app.get("/analytics/breakdown")
+@app.get(
+    "/analytics/breakdown",
+    summary=OP_DOCS["analytics_breakdown"]["summary"],
+    description=OP_DOCS["analytics_breakdown"]["user"],
+    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_breakdown"]["llm"]},
+)
 def analytics_breakdown(
     base: BaseParam,
     metric: MetricParam,
@@ -155,7 +166,12 @@ def analytics_breakdown(
         "rows": rows,
     }
 
-@app.get("/analytics/detail")
+@app.get(
+    "/analytics/detail",
+    summary=OP_DOCS["analytics_detail"]["summary"],
+    description=OP_DOCS["analytics_detail"]["user"],
+    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_detail"]["llm"]},
+)
 def analytics_detail(
     base: BaseParam,
     select: SelectParam,
@@ -184,7 +200,12 @@ def analytics_detail(
         "rows": rows,
     }
 
-@app.get("/analytics/sample")
+@app.get(
+    "/analytics/sample",
+    summary=OP_DOCS["analytics_sample"]["summary"],
+    description=OP_DOCS["analytics_sample"]["user"],
+    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_sample"]["llm"]},
+)
 def analytics_sample(
     base: BaseParam,
     select: SelectParam,
@@ -216,7 +237,12 @@ def analytics_sample(
         "rows": rows,
     }
 
-@app.get("/analytics/semantic_spec")
+@app.get(
+    "/analytics/semantic_spec",
+    summary=OP_DOCS["analytics_semantic_spec"]["summary"],
+    description=OP_DOCS["analytics_semantic_spec"]["user"],
+    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_semantic_spec"]["llm"]},
+)
 def analytics_semantic_spec():
     breakdown = {}
     for base, spec in BREAKDOWN_BASES.items():
@@ -233,7 +259,7 @@ def analytics_semantic_spec():
             "filters": {k: v["type"] for k, v in spec["filters"].items()},
         }
 
-    return {"breakdown": breakdown, "detail": detail}
+    return {"bases": BASES_DOCS, "breakdown": breakdown, "detail": detail}
 
 
 
