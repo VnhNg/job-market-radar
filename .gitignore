@@ -1,12 +1,24 @@
-# Python
+# local env
+.venv/
+
+# local / caches
+.local/
+.pytest_cache/
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
 
-# Env
+# local archives / exports
+changed_files.zip
+openapi.json
+
+# generated data artifacts
+data/
+*.duckdb
+
+# keys and env vars
 .env
 
-# Data (keep raw downloads out of git)
-data/
-notebooks/
+
