@@ -19,6 +19,7 @@ from src.api.analytics.query_docs import (
     CommonFilters,
 )
 
+from src.api.analytics.filter_values import get_filter_values
 from src.api.duckdb_client import query as duckdb_query
 
 
@@ -111,7 +112,10 @@ def geo_by_channel(channel: Optional[str] = None):
     "/definitions",
     summary=OP_DOCS["definitions"]["summary"],
     description=OP_DOCS["definitions"]["user"],
-    openapi_extra={"x-job-market-llm-description": OP_DOCS["definitions"]["llm"]},
+    openapi_extra={
+        "x-job-market-llm-description": OP_DOCS["definitions"]["llm"],
+        "x-job-market-llm-returns": OP_DOCS["definitions"]["returns"],
+    },
 )
 def definitions():
     """
@@ -133,7 +137,10 @@ def definitions():
     "/analytics/breakdown",
     summary=OP_DOCS["analytics_breakdown"]["summary"],
     description=OP_DOCS["analytics_breakdown"]["user"],
-    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_breakdown"]["llm"]},
+    openapi_extra={
+        "x-job-market-llm-description": OP_DOCS["analytics_breakdown"]["llm"],
+        "x-job-market-llm-returns": OP_DOCS["analytics_breakdown"]["returns"],
+    },
 )
 def analytics_breakdown(
     base: BaseParam,
@@ -170,7 +177,10 @@ def analytics_breakdown(
     "/analytics/detail",
     summary=OP_DOCS["analytics_detail"]["summary"],
     description=OP_DOCS["analytics_detail"]["user"],
-    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_detail"]["llm"]},
+    openapi_extra={
+        "x-job-market-llm-description": OP_DOCS["analytics_detail"]["llm"],
+        "x-job-market-llm-returns": OP_DOCS["analytics_detail"]["returns"],
+    },
 )
 def analytics_detail(
     base: BaseParam,
@@ -204,7 +214,10 @@ def analytics_detail(
     "/analytics/sample",
     summary=OP_DOCS["analytics_sample"]["summary"],
     description=OP_DOCS["analytics_sample"]["user"],
-    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_sample"]["llm"]},
+    openapi_extra={
+        "x-job-market-llm-description": OP_DOCS["analytics_sample"]["llm"],
+        "x-job-market-llm-returns": OP_DOCS["analytics_sample"]["returns"],
+    },
 )
 def analytics_sample(
     base: BaseParam,
@@ -241,7 +254,10 @@ def analytics_sample(
     "/analytics/semantic_spec",
     summary=OP_DOCS["analytics_semantic_spec"]["summary"],
     description=OP_DOCS["analytics_semantic_spec"]["user"],
-    openapi_extra={"x-job-market-llm-description": OP_DOCS["analytics_semantic_spec"]["llm"]},
+    openapi_extra={
+        "x-job-market-llm-description": OP_DOCS["analytics_semantic_spec"]["llm"],
+        "x-job-market-llm-returns": OP_DOCS["analytics_semantic_spec"]["returns"],
+    },
 )
 def analytics_semantic_spec():
     breakdown = {}
@@ -261,5 +277,15 @@ def analytics_semantic_spec():
 
     return {"bases": BASES_DOCS, "breakdown": breakdown, "detail": detail}
 
-
+@app.get(
+    "/analytics/filter_values",
+    summary=OP_DOCS["analytics_filter_values"]["summary"],
+    description=OP_DOCS["analytics_filter_values"]["user"],
+    openapi_extra={
+        "x-job-market-llm-description": OP_DOCS["analytics_filter_values"]["llm"],
+        "x-job-market-llm-returns": OP_DOCS["analytics_filter_values"]["returns"],
+    },
+)
+def analytics_filter_values(base: str, field: str, limit: int = 200):
+    return get_filter_values(base=base, field=field, limit=limit)
 

@@ -1,21 +1,26 @@
 BASES_DOCS = {
     "jobs": {
-        "grain": "row-level job postings (v_jobs)",
+        "grain": "row-level job postings (v_jobs). One row = one posting instance.",
         "good_for": [
-            "counts/distribution by channel/bundesland/company/source",
-            "drill-through to example postings",
+            "questions that need individual postings or posting attributes (e.g., title, company, location, url, created_at)",
+            "volume/distribution questions where the unit is postings (counts grouped by channel/bundesland/company/source)",
+            "drill-through to concrete postings after an aggregate slice is identified",
+            "not suitable when the question is about behavior across multiple postings that requires linking postings into the same role identity",
         ],
         "fields": ["job_id", "title", "company", "location", "url", "created_at", "channel", "bundesland"],
     },
     "replication": {
-        "grain": "role_signature groups (v_replication_groups)",
+        "grain": "group-level reposting aggregates (v_replication_groups). One row = (channel, company, role_signature) group.",
         "good_for": [
-            "reposting intensity by company/channel",
-            "multi-location repost patterns",
+            "questions that require group-level reposting measures across locations (postings, distinct_locations, repost_ratio)",
+            "comparing reposting intensity/footprint across companies or channels",
+            "answers where the unit is a role_signature group rather than a single posting",
+            "not suitable when the question requires URLs/full posting text for many individual postings",
         ],
         "fields": ["channel", "company", "role_signature", "postings", "distinct_locations", "repost_ratio"],
     },
 }
+
 
 BREAKDOWN_BASES = {
     "jobs": {
