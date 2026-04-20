@@ -1,0 +1,12 @@
+ollama:
+  base_url: "http://127.0.0.1:11434"
+  model: "deepseek-v3.1:671b-cloud"
+
+api:
+  base_url: "http://127.0.0.1:8000"
+
+agent:
+  max_tool_calls: 3
+  request_timeout_sec: 30
+  max_rows_to_llm: 50
+  max_chars_to_llm: 12000

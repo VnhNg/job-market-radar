@@ -1,0 +1,25 @@
+tools:
+  - name: analytics_semantic_spec
+    title: Expose allowed metrics/dimensions/columns
+    method: GET
+    endpoint: /analytics/semantic_spec
+
+  - name: analytics_breakdown
+    title: Breakdown metrics by up to 2 dimensions
+    method: GET
+    endpoint: /analytics/breakdown
+
+  - name: analytics_detail
+    title: Drill-through rows for a filtered slice
+    method: GET
+    endpoint: /analytics/detail
+
+  - name: analytics_sample
+    title: Deterministic sample rows for inspection
+    method: GET
+    endpoint: /analytics/sample
+
+  - name: definitions
+    title: Glossary
+    method: GET
+    endpoint: /definitions
