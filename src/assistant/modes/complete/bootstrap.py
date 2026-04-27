@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Callable
+from pathlib import Path
 
 from src.api.analytics.filter_values import get_filter_values
 from src.assistant.core.ollama_client import ollama_chat
@@ -41,7 +42,11 @@ class CompleteBootstrap:
     tool_runtime: ToolRuntime
 
 
-def build_complete_bootstrap() -> CompleteBootstrap:
+def build_complete_bootstrap(
+    *,
+    checkpoint_path: str | Path = ".local/app/langgraph/complete/checkpoints.sqlite",
+    langsmith_project: str | None = None,
+) -> CompleteBootstrap:
     cfg = load_assistant_config()
     base_url = str(cfg.api.base_url)
     registry = load_tools_registry()
@@ -51,8 +56,8 @@ def build_complete_bootstrap() -> CompleteBootstrap:
     tool_runtime = ToolRuntime(base_url, registry.tools, timeout_sec=30)
     openapi = fetch_openapi(base_url, timeout_sec=30)
 
-    checkpoint_runtime = make_checkpointer(kind="sqlite")
-    langsmith_runtime = LangSmithRuntime.open_default()
+    checkpoint_runtime = make_checkpointer(kind="sqlite", path=checkpoint_path)
+    langsmith_runtime = LangSmithRuntime.open(project_name=langsmith_project)
 
     graph = build_graph(
         llm=llm,
@@ -64,6 +69,7 @@ def build_complete_bootstrap() -> CompleteBootstrap:
         max_repairs=2,
         max_rows_to_llm=50,
         max_chars_to_llm=12000,
+        langsmith_runtime=langsmith_runtime,
         checkpointer=checkpoint_runtime.checkpointer,
     )
 

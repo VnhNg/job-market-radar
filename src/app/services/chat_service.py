@@ -6,6 +6,7 @@ from src.app.db import init_app_schema, open_app_db
 from src.app.repos.thread_repo import ThreadRepo, ThreadRow
 from src.app.repos.turn_repo import TurnRepo, TurnRow
 from src.app.services.source_service import SourceCard, SourceService
+from src.app.artifact_paths import APP_ARTIFACT_PATHS, EVAL_ARTIFACT_PATHS, ArtifactPaths
 from src.assistant.modes.complete.bootstrap import (
     CompleteBootstrap,
     build_complete_bootstrap,
@@ -16,7 +17,6 @@ from src.assistant.modes.complete.graph.infra.checkpoints import (
     thread_config,
 )
 from src.assistant.modes.complete.graph.infra.runtime_context import InvocationContext
-from src.assistant.modes.complete.graph.infra.tracing import trace_graph_turn
 from src.assistant.modes.complete.state import (
     ExecutionState,
     GraphState,
@@ -54,10 +54,13 @@ class ChatService:
     source_service: SourceService
 
     @classmethod
-    def open_default(cls) -> "ChatService":
-        conn = open_app_db()
+    def open_with_artifact_paths(cls, artifact_paths: ArtifactPaths) -> "ChatService":
+        conn = open_app_db(artifact_paths.db_path)
         init_app_schema(conn)
-        bootstrap = build_complete_bootstrap()
+        bootstrap = build_complete_bootstrap(
+            checkpoint_path=artifact_paths.checkpoint_path,
+            langsmith_project=artifact_paths.langsmith_project,
+        )
         thread_repo = ThreadRepo(conn)
         turn_repo = TurnRepo(conn)
         source_service = SourceService(
@@ -70,6 +73,14 @@ class ChatService:
             turn_repo=turn_repo,
             source_service=source_service,
         )
+
+    @classmethod
+    def open_app(cls) -> "ChatService":
+        return cls.open_with_artifact_paths(APP_ARTIFACT_PATHS)
+
+    @classmethod
+    def open_eval(cls) -> "ChatService":
+        return cls.open_with_artifact_paths(EVAL_ARTIFACT_PATHS)
 
     def close(self) -> None:
         self.bootstrap.checkpoint_runtime.close()
@@ -135,7 +146,10 @@ class ChatService:
             on_progress_event=on_progress_event,
         )
 
-        with trace_graph_turn(thread_id=thread_id, user_question=user_text):
+        with self.bootstrap.langsmith_runtime.trace_turn(
+            thread_id=thread_id,
+            user_question=user_text,
+        ):
             graph.invoke(
                 invoke_input,
                 config=thread_config(thread_id),

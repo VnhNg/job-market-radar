@@ -24,7 +24,6 @@ from .surfaces import (
     build_routing_tool_descriptions,
 )
 from .turn_state import init_execution_from_route, init_turn
-from ..infra.tracing import trace_graph_node
 from ..infra.runtime_context import (
     InvocationContext,
     trace_brief,
@@ -44,6 +43,7 @@ def build_graph(
     max_repairs,
     max_rows_to_llm,
     max_chars_to_llm,
+    langsmith_runtime,
     checkpointer=None,
 ):
     """
@@ -63,7 +63,7 @@ def build_graph(
         current_user_question = runtime.context.current_user_question
         prior_user_questions = runtime.context.prior_user_questions
 
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="start_turn",
             inputs={
@@ -78,7 +78,8 @@ def build_graph(
                 recent_user_questions=prior_user_questions,
                 llm=llm,
             )
-            span.end(outputs=out.model_dump())
+            if span is not None:
+                span.end(outputs=out.model_dump())
 
         runtime.context.add_progress_event(
             "start_turn",
@@ -91,7 +92,7 @@ def build_graph(
         return _state_update(state)
 
     def node_select_turn_memory(state: GraphState, config: RunnableConfig, runtime: Runtime[InvocationContext]):
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="select_turn_memory",
             inputs={
@@ -100,7 +101,8 @@ def build_graph(
             },
         ) as span:
             out = select_turn_memory(state, llm=llm)
-            span.end(outputs=out.model_dump())
+            if span is not None:
+                span.end(outputs=out.model_dump())
 
         runtime.context.add_progress_event(
             "select_turn_memory",
@@ -113,7 +115,7 @@ def build_graph(
         return _state_update(state)
 
     def node_route_base_strategy(state: GraphState, config: RunnableConfig, runtime: Runtime[InvocationContext]):
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="route_base_strategy",
             inputs={
@@ -128,7 +130,8 @@ def build_graph(
                 bases_docs=build_routing_base_docs(semantic_spec=semantic_spec),
                 llm=llm,
             )
-            span.end(outputs=out.model_dump())
+            if span is not None:
+                span.end(outputs=out.model_dump())
 
         runtime.context.add_progress_event(
             "route_base_strategy",
@@ -142,7 +145,7 @@ def build_graph(
         return _state_update(state)
 
     def node_init_execution(state: GraphState, config: RunnableConfig, runtime: Runtime[InvocationContext]):
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="init_execution",
             inputs={
@@ -151,12 +154,13 @@ def build_graph(
             },
         ) as span:
             init_execution_from_route(state)
-            span.end(
-                outputs={
-                    "step_idx": state.turn.execution.step_idx,
-                    "call_count": len(state.turn.execution.calls),
-                }
-            )
+            if span is not None:
+                span.end(
+                    outputs={
+                        "step_idx": state.turn.execution.step_idx,
+                        "call_count": len(state.turn.execution.calls),
+                    }
+                )
 
         runtime.context.add_progress_event(
             "init_execution",
@@ -175,7 +179,7 @@ def build_graph(
             filter_values_fetcher=filter_values_fetcher,
         )
 
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="build_filter_value_pools",
             inputs={
@@ -190,7 +194,8 @@ def build_graph(
                 filter_field_specs=filter_field_specs,
                 llm=llm,
             )
-            span.end(outputs=out.model_dump())
+            if span is not None:
+                span.end(outputs=out.model_dump())
 
         runtime.context.add_progress_event(
             "build_filter_value_pools",
@@ -208,7 +213,7 @@ def build_graph(
             semantic_spec=semantic_spec,
         )
 
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="plan_step_calls",
             inputs={
@@ -223,7 +228,8 @@ def build_graph(
                 call_surfaces=call_surfaces,
                 llm=llm,
             )
-            span.end(outputs=out.model_dump())
+            if span is not None:
+                span.end(outputs=out.model_dump())
 
         runtime.context.add_progress_event(
             "plan_step_calls",
@@ -241,7 +247,7 @@ def build_graph(
             semantic_spec=semantic_spec,
         )
 
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="finalize_step_calls",
             inputs={
@@ -258,7 +264,8 @@ def build_graph(
                 llm=llm,
                 max_repairs=max_repairs,
             )
-            span.end(outputs=summary.model_dump())
+            if span is not None:
+                span.end(outputs=summary.model_dump())
 
         runtime.context.add_progress_event(
             "finalize_step_calls",
@@ -267,7 +274,7 @@ def build_graph(
         return _state_update(state)
 
     def node_execute_step_calls(state: GraphState, config: RunnableConfig, runtime: Runtime[InvocationContext]):
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="execute_step_calls",
             inputs={
@@ -282,11 +289,12 @@ def build_graph(
                 max_rows_to_llm=max_rows_to_llm,
                 max_chars_to_llm=max_chars_to_llm,
             )
-            span.end(
-                outputs={
-                    "results": results_brief(state.turn.execution.calls),
-                }
-            )
+            if span is not None:
+                span.end(
+                    outputs={
+                        "results": results_brief(state.turn.execution.calls),
+                    }
+                )
 
         runtime.context.add_progress_event(
             "execute_step_calls",
@@ -300,7 +308,7 @@ def build_graph(
         session_before = len(state.session.tool_trace)
         turn_before = len(state.turn.memory.tool_trace)
 
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="commit_step_results",
             inputs={
@@ -309,7 +317,8 @@ def build_graph(
             },
         ) as span:
             out = commit_step_results(state, llm=llm)
-            span.end(outputs=out.model_dump())
+            if span is not None:
+                span.end(outputs=out.model_dump())
 
         runtime.context.add_progress_event(
             "commit_step_results",
@@ -326,7 +335,7 @@ def build_graph(
         return _state_update(state)
 
     def node_prepare_next_step(state: GraphState, config: RunnableConfig, runtime: Runtime[InvocationContext]):
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="prepare_next_step",
             inputs={
@@ -335,12 +344,13 @@ def build_graph(
             },
         ) as span:
             prepare_next_step(state)
-            span.end(
-                outputs={
-                    "step_idx": state.turn.execution.step_idx,
-                    "call_count": len(state.turn.execution.calls),
-                }
-            )
+            if span is not None:
+                span.end(
+                    outputs={
+                        "step_idx": state.turn.execution.step_idx,
+                        "call_count": len(state.turn.execution.calls),
+                    }
+                )
 
         runtime.context.add_progress_event(
             "prepare_next_step",
@@ -352,7 +362,7 @@ def build_graph(
         return _state_update(state)
 
     def node_finalize_answer(state: GraphState, config: RunnableConfig, runtime: Runtime[InvocationContext]):
-        with trace_graph_node(
+        with langsmith_runtime.trace_node(
             thread_id=config["configurable"]["thread_id"],
             node_name="finalize_answer",
             inputs={
@@ -362,12 +372,13 @@ def build_graph(
         ) as span:
             answer = finalize_answer(state, llm=llm)
             runtime.context.final_answer = answer
-            span.end(
-                outputs={
-                    "answer_preview": answer[:300],
-                    "answer_length": len(answer),
-                }
-            )
+            if span is not None:
+                span.end(
+                    outputs={
+                        "answer_preview": answer[:300],
+                        "answer_length": len(answer),
+                    }
+                )
 
         runtime.context.add_progress_event(
             "finalize_answer",

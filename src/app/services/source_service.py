@@ -24,13 +24,6 @@ class SourceService:
     bootstrap: CompleteBootstrap
     turn_repo: TurnRepo
 
-    @classmethod
-    def open_default(cls, *, turn_repo: TurnRepo) -> "SourceService":
-        return cls(
-            bootstrap=build_complete_bootstrap(),
-            turn_repo=turn_repo,
-        )
-
     def get_turn(self, turn_id: str) -> TurnRow | None:
         return self.turn_repo.get_turn(turn_id)
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-import os
+from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import Any, Iterator
 
+import langsmith as ls
 from langsmith import Client
 
 
@@ -12,21 +14,88 @@ class LangSmithRuntime:
     project_name: str | None = None
 
     @classmethod
-    def open_default(cls) -> "LangSmithRuntime":
+    def open(cls, *, project_name: str | None) -> "LangSmithRuntime":
         return cls(
             client=Client(),
-            project_name=os.getenv("LANGSMITH_PROJECT"),
+            project_name=project_name,
         )
+
+    @contextmanager
+    def trace_node(
+        self,
+        *,
+        thread_id: str,
+        node_name: str,
+        inputs: dict[str, Any],
+    ) -> Iterator[Any]:
+        if not self.project_name:
+            yield None
+            return
+
+        with ls.tracing_context(
+            enabled=True,
+            project_name=self.project_name,
+            client=self.client,
+        ):
+            with ls.trace(
+                name=f"complete.{node_name}",
+                run_type="chain",
+                inputs=inputs,
+                tags=["assistant:complete", f"node:{node_name}"],
+                metadata={
+                    "thread_id": thread_id,
+                    "graph": "complete",
+                    "node": node_name,
+                },
+                project_name=self.project_name,
+                client=self.client,
+            ) as run_tree:
+                yield run_tree
+
+    @contextmanager
+    def trace_turn(
+        self,
+        *,
+        thread_id: str,
+        user_question: str,
+    ) -> Iterator[Any]:
+        if not self.project_name:
+            yield None
+            return
+
+        with ls.tracing_context(
+            enabled=True,
+            project_name=self.project_name,
+            client=self.client,
+        ):
+            with ls.trace(
+                name="complete.turn",
+                run_type="chain",
+                inputs={
+                    "thread_id": thread_id,
+                    "user_question": user_question,
+                },
+                tags=["assistant:complete", "entry:ui"],
+                metadata={
+                    "thread_id": thread_id,
+                    "graph": "complete",
+                    "entrypoint": "ui",
+                },
+                project_name=self.project_name,
+                client=self.client,
+            ) as run_tree:
+                with ls.tracing_context(enabled=False):
+                    yield run_tree
 
     def delete_thread(self, thread_id: str) -> None:
         if not thread_id.strip():
             raise ValueError("thread_id must be non-empty")
+
+        # If tracing is disabled for this artifact profile, deletion is a no-op.
         if not self.project_name:
-            raise RuntimeError(
-                "LANGSMITH_PROJECT is not set; cannot safely scope trace deletion."
-            )
+            return
         if not self.client.api_key:
-            raise RuntimeError("LangSmith API key is not configured.")
+            return
 
         filter_string = (
             f"and(eq(metadata_key, 'thread_id'), eq(metadata_value, '{thread_id}'))"

@@ -14,7 +14,7 @@ st.set_page_config(page_title="Job Radar", layout="wide")
 
 def _get_service() -> ChatService:
     if "chat_service" not in st.session_state:
-        st.session_state.chat_service = ChatService.open_default()
+        st.session_state.chat_service = ChatService.open_app()
     return st.session_state.chat_service
 
 

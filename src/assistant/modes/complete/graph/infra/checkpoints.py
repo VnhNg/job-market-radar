@@ -37,7 +37,7 @@ class CheckpointRuntime:
 def make_checkpointer(
     *,
     kind: CheckpointKind = "sqlite",
-    path: str | Path = ".local/langgraph/complete/checkpoints.sqlite",
+    path: str | Path = ".local/app/langgraph/complete/checkpoints.sqlite",
 ) -> CheckpointRuntime:
     """
     Build a LangGraph checkpointer for Complete Mode.

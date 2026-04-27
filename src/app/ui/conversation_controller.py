@@ -68,7 +68,7 @@ def _run_turn_worker(
     max_prior_user_questions: int,
     progress_queue: Queue,
 ) -> RunResult:
-    service = ChatService.open_default()
+    service = ChatService.open_app()
     captured_events: list[dict[str, object]] = []
 
     def on_progress_event(event: dict[str, object]) -> None:
