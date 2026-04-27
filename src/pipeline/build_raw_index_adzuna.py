@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASE = PROJECT_ROOT / "data" / "raw" / "adzuna" / "de" / "jobs_search"
 
 
@@ -36,8 +36,8 @@ def parse_pair(response_path: Path) -> Optional[dict]:
         "what_exclude": params.get("what_exclude"),
         "count": res.get("count"),
         "n_results": len(results) if isinstance(results, list) else 0,
-        "request_file": str(req_path),
-        "response_file": str(response_path),
+        "request_file": str(req_path.relative_to(PROJECT_ROOT).as_posix()),
+        "response_file": str(response_path.relative_to(PROJECT_ROOT).as_posix()),
     }
 
 

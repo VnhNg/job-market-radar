@@ -13,7 +13,7 @@ import pandas as pd
 from text_fingerprint import load_fingerprint_config, fingerprint_md5
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_INDEX = PROJECT_ROOT / "data" / "raw" / "adzuna" / "de" / "jobs_search" / "_index.csv"
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 REGISTRY_PATH = PROCESSED_DIR / "registry.jsonl"
@@ -172,7 +172,7 @@ def main() -> int:
     manifest_path = PROCESSED_DIR / f"{args.dataset}.manifest.json"
 
     if not RAW_INDEX.exists():
-        raise SystemExit(f"Missing raw index: {RAW_INDEX}\nRun: python src/build_raw_index_adzuna.py")
+        raise SystemExit(f"Missing raw index: {RAW_INDEX}. Build the raw index before extracting.")
 
     idx = pd.read_csv(RAW_INDEX, encoding="utf-8-sig")
     # Required columns we depend on

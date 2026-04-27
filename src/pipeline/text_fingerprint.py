@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]  
+PROJECT_ROOT = Path(__file__).resolve().parents[2]  
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "configs" / "text_fingerprint.yaml"
 
 _U00_PAT = re.compile(r"(\\u00[0-9a-fA-F]{2}|u00[0-9a-fA-F]{2})")

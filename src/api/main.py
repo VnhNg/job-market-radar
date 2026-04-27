@@ -34,7 +34,7 @@ def get_con():
     Open a read-only connection to DuckDB.
     """
     if not DB_PATH.exists():
-        raise RuntimeError(f"DuckDB not found at {DB_PATH}. Run: python src/load_to_duckdb.py")
+        raise RuntimeError(f"DuckDB not found at {DB_PATH}. Load the warehouse before starting the API.")
     return duckdb.connect(str(DB_PATH), read_only=True)
 
 @app.get("/health")

@@ -7,6 +7,8 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 def next_seq(folder: Path, prefix: str) -> int:
     if not folder.exists():
@@ -83,7 +85,7 @@ def main() -> int:
         return 0
 
     run_date = datetime.now().strftime("%Y-%m-%d")
-    out_dir = Path("data/raw/adzuna/de/jobs_search") / run_date
+    out_dir = out_dir = PROJECT_ROOT / "data" / "raw" / "adzuna" / "de" / "jobs_search" / run_date
     out_dir.mkdir(parents=True, exist_ok=True)
 
     seq = next_seq(out_dir, "response")
