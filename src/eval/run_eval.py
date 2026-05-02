@@ -75,11 +75,26 @@ def _judge_error_failure(error: BaseException) -> dict[str, Any]:
     }
 
 
+def reset_eval_execution_artifacts(service: ChatService) -> None:
+    """
+    Delete temporary eval execution artifacts from previous eval runs.
+
+    Durable eval artifacts are eval_cases and eval_results.
+    Temporary execution artifacts are threads, turns, checkpoints, and eval LangSmith traces.
+    """
+    thread_ids = [
+        row.id
+        for row in service.list_threads()
+    ]
+
+    for thread_id in thread_ids:
+        service.delete_thread(thread_id)
+
+
 def run_case_without_judging(
     *,
     service: ChatService,
     case: EvalCase,
-    max_prior_user_questions: int,
 ) -> CompletedEvalRun:
     thread = service.create_thread()
 
@@ -97,7 +112,7 @@ def run_case_without_judging(
     _, ctx = service.run_turn(
         thread_id=thread.id,
         user_text=case.target_user_text,
-        max_prior_user_questions=max_prior_user_questions,
+        max_prior_user_questions=len(case.prior_user_questions),
     )
 
     return CompletedEvalRun(
@@ -120,8 +135,6 @@ def _batches(items: list[CompletedEvalRun], batch_size: int) -> list[list[Comple
 def run_eval(
     *,
     judge_batch_size: int,
-    max_prior_user_questions: int,
-    keep_passed_threads: bool,
 ) -> int:
     conn = open_eval_db()
     init_eval_schema(conn)
@@ -137,6 +150,7 @@ def run_eval(
 
     service = ChatService.open_eval()
     completed: list[CompletedEvalRun] = []
+    reset_eval_execution_artifacts(service)
 
     try:
         for case in cases:
@@ -144,7 +158,6 @@ def run_eval(
                 completed_run = run_case_without_judging(
                     service=service,
                     case=case,
-                    max_prior_user_questions=max_prior_user_questions,
                 )
                 completed.append(completed_run)
                 print(f"{case.case_id}: ran")
@@ -181,9 +194,6 @@ def run_eval(
 
                     print(f"{item.case.case_id}: {decision.status}")
 
-                    if decision.status == "pass" and not keep_passed_threads:
-                        service.delete_thread(item.eval_thread_id)
-
             except Exception as error:
                 for item in batch:
                     result_repo.save_result(
@@ -208,22 +218,12 @@ def run_eval(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run eval cases through the app ChatService.")
     parser.add_argument("--judge-batch-size", type=int, default=3)
-    parser.add_argument("--max-prior-user-questions", type=int, default=10)
-    parser.add_argument(
-        "--keep-passed-threads",
-        action="store_true",
-        help="Keep eval threads for passed cases. Failed/error threads are kept by default.",
-    )
     args = parser.parse_args()
 
     if args.judge_batch_size < 1:
         raise SystemExit("--judge-batch-size must be >= 1")
 
-    return run_eval(
-        judge_batch_size=args.judge_batch_size,
-        max_prior_user_questions=args.max_prior_user_questions,
-        keep_passed_threads=args.keep_passed_threads,
-    )
+    return run_eval(judge_batch_size=args.judge_batch_size)
 
 
 if __name__ == "__main__":
