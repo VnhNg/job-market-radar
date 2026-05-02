@@ -16,6 +16,7 @@ class TurnRow:
     thread_id: str
     position: int
     user_text: str
+    max_prior_user_questions: int | None
     assistant_text: str
     checkpoint_id: str
     created_at: str
@@ -29,7 +30,7 @@ class TurnRepo:
     def list_turns(self, *, thread_id: str) -> list[TurnRow]:
         rows = self.conn.execute(
             """
-            SELECT id, thread_id, position, user_text, assistant_text, checkpoint_id, created_at, updated_at
+            SELECT id, thread_id, position, user_text, max_prior_user_questions, assistant_text, checkpoint_id, created_at, updated_at
             FROM turns
             WHERE thread_id = ?
             ORDER BY position ASC
@@ -43,6 +44,7 @@ class TurnRepo:
                 thread_id=row["thread_id"],
                 position=row["position"],
                 user_text=row["user_text"],
+                max_prior_user_questions=row["max_prior_user_questions"],
                 assistant_text=row["assistant_text"],
                 checkpoint_id=row["checkpoint_id"],
                 created_at=row["created_at"],
@@ -54,7 +56,7 @@ class TurnRepo:
     def get_turn(self, turn_id: str) -> TurnRow | None:
         row = self.conn.execute(
             """
-            SELECT id, thread_id, position, user_text, assistant_text, checkpoint_id, created_at, updated_at
+            SELECT id, thread_id, position, user_text, max_prior_user_questions, assistant_text, checkpoint_id, created_at, updated_at
             FROM turns
             WHERE id = ?
             """,
@@ -69,6 +71,7 @@ class TurnRepo:
             thread_id=row["thread_id"],
             position=row["position"],
             user_text=row["user_text"],
+            max_prior_user_questions=row["max_prior_user_questions"],
             assistant_text=row["assistant_text"],
             checkpoint_id=row["checkpoint_id"],
             created_at=row["created_at"],
@@ -80,6 +83,7 @@ class TurnRepo:
         *,
         thread_id: str,
         user_text: str,
+        max_prior_user_questions: int,
         assistant_text: str,
         checkpoint_id: str,
     ) -> TurnRow:
@@ -103,18 +107,20 @@ class TurnRepo:
                 thread_id,
                 position,
                 user_text,
+                max_prior_user_questions,
                 assistant_text,
                 checkpoint_id,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 turn_id,
                 thread_id,
                 position,
                 user_text,
+                max_prior_user_questions,
                 assistant_text,
                 checkpoint_id,
                 now,
@@ -128,6 +134,7 @@ class TurnRepo:
             thread_id=thread_id,
             position=position,
             user_text=user_text,
+            max_prior_user_questions=max_prior_user_questions,
             assistant_text=assistant_text,
             checkpoint_id=checkpoint_id,
             created_at=now,

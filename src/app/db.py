@@ -37,6 +37,7 @@ def init_app_schema(conn: sqlite3.Connection) -> None:
             thread_id TEXT NOT NULL,
             position INTEGER NOT NULL,
             user_text TEXT NOT NULL,
+            max_prior_user_questions INTEGER,
             assistant_text TEXT NOT NULL,
             checkpoint_id TEXT NOT NULL,
             created_at TEXT NOT NULL,
@@ -46,6 +47,19 @@ def init_app_schema(conn: sqlite3.Connection) -> None:
         )
         """
     )
+
+    existing_turn_columns = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(turns)").fetchall()
+    }
+
+    if "max_prior_user_questions" not in existing_turn_columns:
+        conn.execute(
+            """
+            ALTER TABLE turns
+            ADD COLUMN max_prior_user_questions INTEGER
+            """
+        )
 
     conn.execute(
         """

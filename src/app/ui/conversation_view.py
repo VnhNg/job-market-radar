@@ -13,8 +13,18 @@ from src.app.ui.session_state import (
 )
 from src.app.ui.source_view import render_sources_into
 
+from src.eval.capture_service import EvalCaptureService
+
 
 BOTTOM_SPACER_REM = 6.5
+
+
+def _capture_turn_as_eval_case(svc: ChatService, *, turn_id: str):
+    capture = EvalCaptureService.open_for_app_service(svc)
+    try:
+        return capture.capture_turn(turn_id=turn_id)
+    finally:
+        capture.close()
 
 
 def _fragment(*, run_every: str | None = None):
@@ -79,6 +89,22 @@ def _render_completed_assistant_turn(
 
     _render_answer_into(answer_placeholder, answer_text=assistant_text)
     render_sources_into(sources_placeholder, svc, turn_id=turn_id)
+
+    if st.button(
+        "📝",
+        key=f"capture_eval_case_{turn_id}",
+        help="Add this turn to eval cases",
+        type="tertiary",
+    ):
+        try:
+            result = _capture_turn_as_eval_case(svc, turn_id=turn_id)
+        except Exception as exc:
+            st.toast(f"Could not capture eval case: {exc}", icon="⚠️")
+        else:
+            if result.created:
+                st.toast(f"Captured eval case: `{result.case_id}`", icon="✅")
+            else:
+                st.toast(f"Already captured as eval case: `{result.case_id}`", icon="ℹ️")
 
 
 def _render_active_run(*, run) -> None:

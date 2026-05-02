@@ -3,10 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.app.repos.turn_repo import TurnRepo, TurnRow
-from src.assistant.modes.complete.bootstrap import (
-    CompleteBootstrap,
-    build_complete_bootstrap,
-)
+from src.assistant.modes.complete.bootstrap import CompleteBootstrap
 from src.assistant.modes.complete.graph.infra.checkpoints import checkpoint_config
 
 

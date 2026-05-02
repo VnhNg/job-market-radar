@@ -166,6 +166,7 @@ class ChatService:
         turn = self.turn_repo.create_turn(
             thread_id=thread_id,
             user_text=user_text,
+            max_prior_user_questions=max_prior_user_questions,
             assistant_text=ctx.final_answer,
             checkpoint_id=checkpoint_id,
         )
