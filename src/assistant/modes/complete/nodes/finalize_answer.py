@@ -37,14 +37,18 @@ def _build_messages(
 
     system = (
         "Write the final answer grounded strictly in the provided trace entries.\n"
-        "Return ONLY one JSON object matching this schema:\n"
+        "Return ONLY valid JSON with exactly these keys:\n"
         '{ "answer": string, "debug_reason": string }\n'
-        "Rules:\n"
-        "- Use only evidence from the provided trace entries.\n"
-        "- Include a short 'Sources' section at the end as bullet lines.\n"
-        "- Each source line should summarize tool + key params/results briefly.\n"
-        "- Do not invent facts not supported by the trace.\n"
-        "- Be concise but complete.\n"
+        "JSON rules:\n"
+        "- No Markdown wrapper.\n"
+        "- No extra keys, including Sources/sources.\n"
+        "- Put Sources inside the answer string, not as a JSON key.\n"
+        "- Keep answer concise to reduce JSON escaping errors.\n"
+        "Answer rules:\n"
+        "- Use only evidence from the trace.\n"
+        "- Include only the most important rows/results, not every row.\n"
+        "- End the answer string with a short Sources section.\n"
+        "- debug_reason must be short and single-line.\n"
     )
 
     user = (

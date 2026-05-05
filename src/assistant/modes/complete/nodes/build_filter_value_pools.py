@@ -29,7 +29,7 @@ def _build_messages(
         trace_lines.append(
             f"{i}. tool={e.get('tool_name')} base={e.get('base')} "
             f"meaning={e.get('meaning')} params={e.get('params')} "
-            f"rows_preview={e.get('results', {}).get('rows_preview')}"
+            f"rows_preview={e.get('results', {}).get('rows')}"
         )
 
     field_lines = []
@@ -42,29 +42,23 @@ def _build_messages(
         field_lines.append(line)
 
     system = (
-        "Build call-local grounded filter value pools for the current step.\n"
-        "Return ONLY one JSON object matching this schema:\n"
+        "Build grounded candidate filter-value pools for the current step.\n"
+        "Return ONLY valid JSON matching this schema:\n"
         '{ "calls": [[{"field_name": string, "values": [any, ...], "description": string}, ...], ...], "debug_reason": string }\n'
-        "Valid filter fields for this step:\n"
+        "Valid filter fields:\n"
         + ("\n".join(field_lines) if field_lines else "(none)") + "\n"
         "Rules:\n"
-        f"- The output must contain exactly {call_count} call entries in 'calls'.\n"
-        "- Each inner list is the filter_value_pools for one existing CallState.\n"
-        "- Use only the provided valid filter field names.\n"
-        "- Pools are for filter fields only.\n"
-        "- It is valid for different calls to have different or same pools.\n"
-        "- If no useful values exist for a call, return an empty list for that call.\n"
-        "- Prefer values that help distinguish slices/entities needed for the current step.\n"
-        "- Do not plan final params here; only provide candidate pools.\n"
-        "- The description must explain what the candidate values mean in the current turn.\n"
-        "- Describe provenance, not the generic meaning of the field.\n"
-        "- If values come from selected prior trace entries, say that and state whether order reflects prior ranking.\n"
-        "- If a value is copied from the question/planning text, say that explicitly.\n"
-        "- Do not copy the backend field description into the pool description.\n"
-        "- Do not invent field names.\n"
-        "- If a field is not listed in the valid filter fields, do not output it.\n"
+        f"- Return exactly {call_count} call entries in calls.\n"
+        "- Each inner list belongs to one existing call.\n"
+        "- Use only listed filter fields; never invent fields.\n"
+        "- Build candidate pools only; do not choose final params.\n"
+        "- If no grounded useful values exist for a call, return an empty list.\n"
+        "- Values must be grounded in the question, planning text, selected prior trace, or provided candidate_values.\n"
         "- If a field provides candidate_values, choose only from those values and copy them verbatim.\n"
-        "- Do not shorten, normalize, paraphrase, or invent string values when candidate_values are provided.\n"
+        "- Do not shorten, normalize, or paraphrase provided string values.\n"
+        "- Do not invent numeric/date/boolean values. Use numeric/date/boolean values only when explicitly stated in the question or prior trace.\n"
+        "- Do not guess thresholds such as min/max values from vague words like many, high, low, recent, or strong.\n"
+        "- Descriptions must state provenance: question text, planning text, prior trace, or candidate_values.\n"
     )
 
     user = (

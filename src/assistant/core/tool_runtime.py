@@ -342,6 +342,6 @@ class ToolRuntime:
 
         text = json.dumps(payload, ensure_ascii=False)
         if len(text) > max_chars:
-            payload.pop("rows", None)
+            payload["rows"] = payload["rows"][:5]
 
         return full, payload

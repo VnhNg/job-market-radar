@@ -66,10 +66,8 @@ def _build_messages(
         "- strategy_id must be one of the listed strategy IDs.\n"
         "- Use turn trace as carryover context for follow-ups.\n"
         "- Choose the smallest sufficient strategy.\n"
-        "- For multi_step strategies, calls_in_step must be 1.\n"
-        "- For single_step strategies, calls_in_step must be between 1 and the strategy's max_calls_in_step.\n"
         "- If the target entity or slice is already known from turn trace, prefer direct downstream strategies.\n"
-        "- Only choose base and strategy_id.\n"
+        "- Return all required routing fields: base, strategy_id, calls_in_step, debug_reason.\n"
         "- Do not propose tool arguments, filters, metrics, dimensions, or columns.\n"
     )
 

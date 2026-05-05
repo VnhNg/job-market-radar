@@ -1,6 +1,6 @@
 ollama:
   base_url: "http://127.0.0.1:11434"
-  model: "deepseek-v3.1:671b-cloud"
+  model: "gpt-oss:120b-cloud"
 
 api:
   base_url: "http://127.0.0.1:8000"

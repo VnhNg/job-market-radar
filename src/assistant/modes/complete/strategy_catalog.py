@@ -89,9 +89,11 @@ CATALOG: Dict[str, StrategySpec] = {
         [
             _step(
                 StepKind.B,
-                "Produce one or more aggregate breakdown calls for the current ask. "
-                "Use this when the question can be answered directly from grouped or ranked aggregate outputs. "
-                "If multiple known slices should be analyzed separately, distribute them across calls instead of collapsing them into one call.",
+                "Run one or more aggregate breakdown calls for the current ask. "
+                "Use this when the answer can be produced directly from grouped or ranked aggregate outputs. "
+                "`calls_in_step` is the number of independent breakdown calls to run in this same step. "
+                "If the user asks to compare multiple known slices separately, set `calls_in_step` to the number of slices, up to the max. "
+                "Do not collapse separate slices into one combined breakdown when the user asks for separate results.",
             )
         ],
         max_calls_in_step=3,
@@ -103,11 +105,11 @@ CATALOG: Dict[str, StrategySpec] = {
         [
             _step(
                 StepKind.D,
-                "Produce one or more detail calls when the needed entity or slice is already known "
-                "from the question or available memory. "
-                "If multiple target entities or slices are already known and each call can describe only one of them, "
-                "use separate calls rather than combining multiple values into one call. "
-                "Preserve meaningful ordering from memory when the candidates are ranked.",
+                "Run one or more detail calls for the current ask. "
+                "Use this when the needed entity or slice is already known from the question or available memory. "
+                "`calls_in_step` is the number of independent detail calls to run in this same step. "
+                "If the user asks for details for multiple known entities or slices separately, set `calls_in_step` to the number of targets, up to the max. "
+                "Do not combine separate targets into one call when each target should have its own result.",
             )
         ],
         max_calls_in_step=3,
@@ -119,11 +121,11 @@ CATALOG: Dict[str, StrategySpec] = {
         [
             _step(
                 StepKind.S,
-                "Produce one or more sample calls when examples are sufficient and the target "
-                "entity or slice is already known from the question or available memory. "
-                "If separate examples are needed for multiple known entities or slices and each call can cover only one of them, "
-                "distribute them across calls instead of combining them into one call. "
-                "Preserve meaningful ordering from memory when the candidates are ranked.",
+                "Run one or more sample calls for the current ask. "
+                "Use this when examples are sufficient and the target slice is already known from the question or available memory. "
+                "`calls_in_step` is the number of independent sample calls to run in this same step. "
+                "If the user asks for separate samples for multiple known slices, set `calls_in_step` to the number of slices, up to the max. "
+                "Do not collapse separate samples into one combined call.",
             )
         ],
         max_calls_in_step=3,
