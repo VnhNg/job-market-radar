@@ -37,7 +37,7 @@ def init_eval_schema(conn: sqlite3.Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS eval_results (
             case_id TEXT PRIMARY KEY,
-            status TEXT NOT NULL CHECK (status IN ('pass', 'fail', 'error')),
+            status TEXT NOT NULL CHECK (status IN ('unjudged', 'pass', 'fail', 'error')),
             final_answer TEXT NOT NULL,
             progress_events_json TEXT NOT NULL,
             failure_json TEXT NOT NULL DEFAULT '{}',

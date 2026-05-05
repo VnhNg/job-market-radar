@@ -3,67 +3,74 @@ from __future__ import annotations
 
 import argparse
 import traceback
-from dataclasses import dataclass
-from typing import Any
+from collections import Counter
 
-from src.app.services.chat_service import ChatService
-from src.assistant.modes.complete.graph.infra.checkpoints import thread_config
-from src.assistant.modes.complete.state import GraphState
 from src.eval.eval_db import init_eval_schema, open_eval_db
 from src.eval.judge import EvalJudgeCase, judge_runs_batch
-from src.eval.repos.case_repo import EvalCase, EvalCaseRepo
-from src.eval.repos.result_repo import EvalResultRepo
+from src.eval.repos.case_repo import EvalCaseRepo
+from src.eval.repos.result_repo import EvalResult, EvalResultRepo
 
 
-@dataclass(frozen=True)
-class CompletedEvalRun:
-    case: EvalCase
-    judge_case: EvalJudgeCase
-    eval_thread_id: str
+JUDGEABLE_STATUSES = {"unjudged", "pass", "fail"}
 
 
-def _seed_prior_user_questions(
-    service: ChatService,
+def _batches(items: list[EvalResult], batch_size: int) -> list[list[EvalResult]]:
+    return [items[i : i + batch_size] for i in range(0, len(items), batch_size)]
+
+
+def _is_failed_llm_judge_result(result: EvalResult) -> bool:
+    return (
+        result.status == "error"
+        and result.failure.get("first_failed_node") == "llm_judge"
+    )
+
+
+def _is_judgeable_result(result: EvalResult) -> bool:
+    if result.status in JUDGEABLE_STATUSES:
+        return True
+    return _is_failed_llm_judge_result(result)
+
+
+def select_results_to_judge(
     *,
-    thread_id: str,
-    prior_user_questions: list[str],
-) -> None:
-    for question in prior_user_questions:
-        service.turn_repo.create_turn(
-            thread_id=thread_id,
-            user_text=question,
-            assistant_text="[eval seed: prior user question only]",
-            checkpoint_id="[eval seed: no checkpoint]",
-        )
+    result_repo: EvalResultRepo,
+    unjudged_only: bool,
+    failed_llm_judge_only: bool,
+) -> list[EvalResult]:
+    results = result_repo.list_results()
+
+    if not unjudged_only and not failed_llm_judge_only:
+        return [
+            result
+            for result in results
+            if _is_judgeable_result(result)
+        ]
+
+    selected: list[EvalResult] = []
+
+    for result in results:
+        if unjudged_only and result.status == "unjudged":
+            selected.append(result)
+            continue
+
+        if failed_llm_judge_only and _is_failed_llm_judge_result(result):
+            selected.append(result)
+            continue
+
+    return selected
 
 
-def _seed_given_state(
-    service: ChatService,
-    *,
-    thread_id: str,
-    given_state: dict[str, Any] | None,
-) -> None:
-    if given_state is None:
-        return
-
-    state = GraphState.model_validate(given_state)
-    service.bootstrap.graph.update_state(thread_config(thread_id), state)
+def _selection_label(*, unjudged_only: bool, failed_llm_judge_only: bool) -> str:
+    if unjudged_only and failed_llm_judge_only:
+        return "unjudged + failed LLM judge"
+    if unjudged_only:
+        return "unjudged only"
+    if failed_llm_judge_only:
+        return "failed LLM judge only"
+    return "all judgeable results"
 
 
-def _error_failure(error: BaseException, *, eval_thread_id: str | None = None) -> dict[str, Any]:
-    return {
-        "first_failed_node": "run_turn",
-        "reason": "Eval execution raised an exception.",
-        "details": {
-            "eval_thread_id": eval_thread_id,
-            "error_type": type(error).__name__,
-            "error_message": str(error),
-            "traceback": traceback.format_exc(),
-        },
-    }
-
-
-def _judge_error_failure(error: BaseException) -> dict[str, Any]:
+def _judge_error_failure(error: BaseException) -> dict[str, object]:
     return {
         "first_failed_node": "llm_judge",
         "reason": "LLM judge failed to return a valid decision.",
@@ -75,66 +82,36 @@ def _judge_error_failure(error: BaseException) -> dict[str, Any]:
     }
 
 
-def reset_eval_execution_artifacts(service: ChatService) -> None:
-    """
-    Delete temporary eval execution artifacts from previous eval runs.
+def print_summary(result_repo: EvalResultRepo) -> None:
+    results = result_repo.list_results()
 
-    Durable eval artifacts are eval_cases and eval_results.
-    Temporary execution artifacts are threads, turns, checkpoints, and eval LangSmith traces.
-    """
-    thread_ids = [
-        row.id
-        for row in service.list_threads()
-    ]
-
-    for thread_id in thread_ids:
-        service.delete_thread(thread_id)
-
-
-def run_case_without_judging(
-    *,
-    service: ChatService,
-    case: EvalCase,
-) -> CompletedEvalRun:
-    thread = service.create_thread()
-
-    _seed_prior_user_questions(
-        service,
-        thread_id=thread.id,
-        prior_user_questions=case.prior_user_questions,
-    )
-    _seed_given_state(
-        service,
-        thread_id=thread.id,
-        given_state=case.given_state,
+    status_counts = Counter(result.status for result in results)
+    failed_nodes = Counter(
+        result.failure.get("first_failed_node")
+        for result in results
+        if result.failure.get("first_failed_node")
     )
 
-    _, ctx = service.run_turn(
-        thread_id=thread.id,
-        user_text=case.target_user_text,
-        max_prior_user_questions=len(case.prior_user_questions),
-    )
+    print()
+    print("Eval summary")
+    print(f"Total:    {len(results)}")
+    print(f"Unjudged: {status_counts.get('unjudged', 0)}")
+    print(f"Pass:     {status_counts.get('pass', 0)}")
+    print(f"Fail:     {status_counts.get('fail', 0)}")
+    print(f"Error:    {status_counts.get('error', 0)}")
 
-    return CompletedEvalRun(
-        case=case,
-        eval_thread_id=thread.id,
-        judge_case=EvalJudgeCase(
-            case_id=case.case_id,
-            target_user_text=case.target_user_text,
-            prior_user_questions=case.prior_user_questions,
-            progress_events=ctx.progress_events,
-            final_answer=ctx.final_answer or "",
-        ),
-    )
-
-
-def _batches(items: list[CompletedEvalRun], batch_size: int) -> list[list[CompletedEvalRun]]:
-    return [items[i : i + batch_size] for i in range(0, len(items), batch_size)]
+    if failed_nodes:
+        print()
+        print("First failed nodes:")
+        for node, count in failed_nodes.most_common():
+            print(f"{node}: {count}")
 
 
 def run_eval(
     *,
     judge_batch_size: int,
+    unjudged_only: bool,
+    failed_llm_judge_only: bool,
 ) -> int:
     conn = open_eval_db()
     init_eval_schema(conn)
@@ -142,88 +119,117 @@ def run_eval(
     case_repo = EvalCaseRepo(conn)
     result_repo = EvalResultRepo(conn)
 
-    cases = case_repo.list_cases()
-    if not cases:
-        print("No eval cases found.")
+    selected_results = select_results_to_judge(
+        result_repo=result_repo,
+        unjudged_only=unjudged_only,
+        failed_llm_judge_only=failed_llm_judge_only,
+    )
+
+    if not selected_results:
+        print(
+            "No eval results selected for judging "
+            f"({ _selection_label(unjudged_only=unjudged_only, failed_llm_judge_only=failed_llm_judge_only) })."
+        )
+        print_summary(result_repo)
         conn.close()
         return 0
 
-    service = ChatService.open_eval()
-    completed: list[CompletedEvalRun] = []
-    reset_eval_execution_artifacts(service)
+    print(f"Judging results: {len(selected_results)}")
+    print(
+        "Selection: "
+        f"{_selection_label(unjudged_only=unjudged_only, failed_llm_judge_only=failed_llm_judge_only)}"
+    )
 
     try:
-        for case in cases:
+        for batch in _batches(selected_results, judge_batch_size):
             try:
-                completed_run = run_case_without_judging(
-                    service=service,
-                    case=case,
-                )
-                completed.append(completed_run)
-                print(f"{case.case_id}: ran")
-            except Exception as error:
-                result_repo.save_result(
-                    case_id=case.case_id,
-                    status="error",
-                    final_answer="",
-                    progress_events=[],
-                    failure=_error_failure(error),
-                )
-                print(f"{case.case_id}: error during run ({type(error).__name__}: {error})")
+                judge_cases: list[EvalJudgeCase] = []
 
-        for batch in _batches(completed, judge_batch_size):
-            try:
-                judge_decision = judge_runs_batch(
-                    cases=[item.judge_case for item in batch],
-                )
+                for result in batch:
+                    case = case_repo.get_case(result.case_id)
+                    if case is None:
+                        raise RuntimeError(
+                            f"Eval case not found for result: {result.case_id}"
+                        )
+
+                    judge_cases.append(
+                        EvalJudgeCase(
+                            case_id=result.case_id,
+                            target_user_text=case.target_user_text,
+                            prior_user_questions=case.prior_user_questions,
+                            progress_events=result.progress_events,
+                            final_answer=result.final_answer,
+                        )
+                    )
+
+                judge_decision = judge_runs_batch(cases=judge_cases)
                 decisions_by_case_id = {
                     decision.case_id: decision
                     for decision in judge_decision.decisions
                 }
 
-                for item in batch:
-                    decision = decisions_by_case_id[item.case.case_id]
+                for result in batch:
+                    decision = decisions_by_case_id[result.case_id]
 
                     result_repo.save_result(
-                        case_id=item.case.case_id,
+                        case_id=result.case_id,
                         status=decision.status,
-                        final_answer=item.judge_case.final_answer,
-                        progress_events=item.judge_case.progress_events,
+                        final_answer=result.final_answer,
+                        progress_events=result.progress_events,
                         failure=decision.to_failure_json(),
                     )
 
-                    print(f"{item.case.case_id}: {decision.status}")
+                    print(f"{result.case_id}: {decision.status}")
 
             except Exception as error:
-                for item in batch:
+                for result in batch:
                     result_repo.save_result(
-                        case_id=item.case.case_id,
+                        case_id=result.case_id,
                         status="error",
-                        final_answer=item.judge_case.final_answer,
-                        progress_events=item.judge_case.progress_events,
+                        final_answer=result.final_answer,
+                        progress_events=result.progress_events,
                         failure=_judge_error_failure(error),
                     )
+
                     print(
-                        f"{item.case.case_id}: error during judging "
+                        f"{result.case_id}: error during judging "
                         f"({type(error).__name__}: {error})"
                     )
 
+        print_summary(result_repo)
+
     finally:
-        service.close()
         conn.close()
 
     return 0
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run eval cases through the app ChatService.")
+    parser = argparse.ArgumentParser(
+        description="Run the LLM judge over saved eval case results."
+    )
     parser.add_argument("--judge-batch-size", type=int, default=3)
+    parser.add_argument(
+        "--unjudged-only",
+        action="store_true",
+        help="Judge only results with status='unjudged'.",
+    )
+    parser.add_argument(
+        "--failed-llm-judge-only",
+        action="store_true",
+        help="Judge only results whose previous error came from the LLM judge.",
+    )
+
     args = parser.parse_args()
 
     if args.judge_batch_size < 1:
         raise SystemExit("--judge-batch-size must be >= 1")
 
-    return run_eval(judge_batch_size=args.judge_batch_size)
+    return run_eval(
+        judge_batch_size=args.judge_batch_size,
+        unjudged_only=args.unjudged_only,
+        failed_llm_judge_only=args.failed_llm_judge_only,
+    )
 
 
 if __name__ == "__main__":

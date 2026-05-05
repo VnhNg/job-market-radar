@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 
-EvalStatus = Literal["pass", "fail", "error"]
+EvalStatus = Literal["unjudged", "pass", "fail", "error"]
 
 
 @dataclass(frozen=True)
