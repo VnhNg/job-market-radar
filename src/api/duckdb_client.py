@@ -11,7 +11,7 @@ def connect(db_path: Path = DEFAULT_DB_PATH) -> duckdb.DuckDBPyConnection:
     """
     Create a new DuckDB connection.
     """
-    return duckdb.connect(str(db_path))
+    return duckdb.connect(str(db_path), read_only=True)
 
 
 def query(sql: str, params: list | None = None, *, db_path: Path = DEFAULT_DB_PATH) -> list[dict]:

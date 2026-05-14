@@ -122,7 +122,10 @@ def _parse_one_response(response_file_rel: str, what: str) -> list[dict]:
 
 def _merge_group(g: pd.DataFrame) -> pd.Series:
     # One row per (source, job_id). Merge extra_json["queries"] by union.
+    source, job_id = g.name
     first = g.iloc[0].to_dict()
+    first["source"] = source
+    first["job_id"] = job_id
 
     # Parse extra_json dicts (they may already be dicts or JSON strings)
     extras: list[dict] = []
@@ -255,8 +258,11 @@ def main() -> int:
             raise SystemExit(f"Internal error: missing column {col}")
 
     # Group-merge duplicates by (source, job_id)
-    combined = combined.groupby(["source", "job_id"], as_index=False, sort=False).apply(_merge_group)
-    combined = combined.reset_index(drop=True)
+    combined = (
+        combined.groupby(["source", "job_id"], sort=False)
+        .apply(_merge_group, include_groups=False)
+        .reset_index(drop=True)
+    )
 
     # Serialize extra_json dicts back to JSON strings
     combined["extra_json"] = combined["extra_json"].apply(lambda d: json.dumps(d, ensure_ascii=False) if isinstance(d, dict) else str(d))

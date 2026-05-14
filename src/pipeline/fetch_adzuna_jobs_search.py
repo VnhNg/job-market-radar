@@ -80,8 +80,9 @@ def main() -> int:
         params[k] = v
 
     if args.print_request:
+        safe_params = {k: v for k, v in params.items() if k not in {"app_id", "app_key"}}
         print("URL:", base_url)
-        print("Params:", json.dumps(params, ensure_ascii=False, indent=2))
+        print("Params:", json.dumps(safe_params, ensure_ascii=False, indent=2))
         return 0
 
     run_date = datetime.now().strftime("%Y-%m-%d")
