@@ -287,7 +287,6 @@ def render_thread_row(
         if st.button(
             "x",
             key=f"thread:{thread.id}:delete",
-            help="Delete conversation",
             width="stretch",
             type="tertiary",
             disabled=is_processing,
