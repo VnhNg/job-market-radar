@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional, Any, Literal
+from typing import Optional, Any
 
 import urllib.request
 from pydantic import BaseModel, Field, create_model

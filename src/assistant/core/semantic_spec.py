@@ -1,8 +1,7 @@
-# src/assistant/core/semantic_spec.py
 from __future__ import annotations
 
 import json
-from typing import Literal, Optional
+from typing import Literal
 import urllib.request
 
 from pydantic import BaseModel, Field

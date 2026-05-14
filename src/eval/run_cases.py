@@ -1,4 +1,3 @@
-# src/eval/run_cases.py
 from __future__ import annotations
 
 import argparse

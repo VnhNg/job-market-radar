@@ -1,5 +1,3 @@
-# src/api/analytics/op_docs.py
-
 OP_DOCS = {
     "analytics_filter_values": {
         "summary": "Distinct values for one valid analytics filter field",

@@ -1,4 +1,3 @@
-# src/api/analytics/query_docs.py
 from __future__ import annotations
 
 from typing import Optional, Annotated

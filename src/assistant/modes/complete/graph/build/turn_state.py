@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from ...state import (
     CallState,
     GraphState,

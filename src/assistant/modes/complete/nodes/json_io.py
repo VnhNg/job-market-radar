@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Type
 
 from pydantic import BaseModel, ValidationError
 
