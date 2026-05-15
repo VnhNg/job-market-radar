@@ -18,7 +18,7 @@ def make_llm() -> Callable[..., dict]:
     cfg = load_assistant_config()
     model = cfg.ollama.model
     base_url = cfg.ollama.base_url
-    timeout_sec = getattr(cfg.ollama, "timeout_sec", 30)
+    timeout_sec = cfg.ollama.timeout_sec
 
     def llm(*, messages, tools=None, response_format=None, options=None, **kwargs):
         return ollama_chat(
@@ -52,9 +52,10 @@ def build_complete_bootstrap(
     registry = load_tools_registry()
 
     llm = make_llm()
-    semantic_spec = fetch_semantic_spec(base_url, timeout_sec=30)
-    tool_runtime = ToolRuntime(base_url, registry.tools, timeout_sec=30)
-    openapi = fetch_openapi(base_url, timeout_sec=30)
+    timeout = cfg.agent.request_timeout_sec
+    semantic_spec = fetch_semantic_spec(base_url, timeout_sec=timeout)
+    tool_runtime = ToolRuntime(base_url, registry.tools, timeout_sec=timeout)
+    openapi = fetch_openapi(base_url, timeout_sec=timeout)
 
     checkpoint_runtime = make_checkpointer(kind="sqlite", path=checkpoint_path)
     langsmith_runtime = LangSmithRuntime.open(project_name=langsmith_project)
@@ -66,9 +67,9 @@ def build_complete_bootstrap(
         openapi=openapi,
         tools=registry.tools,
         filter_values_fetcher=get_filter_values,
-        max_repairs=2,
-        max_rows_to_llm=50,
-        max_chars_to_llm=12000,
+        max_repairs=cfg.agent.max_repairs,
+        max_rows_to_llm=cfg.agent.max_rows_to_llm,
+        max_chars_to_llm=cfg.agent.max_chars_to_llm,
         langsmith_runtime=langsmith_runtime,
         checkpointer=checkpoint_runtime.checkpointer,
     )
