@@ -1,8 +1,8 @@
 # Job Market Radar
 
-**A governed analytics chatbot agent for the German entry-level data/AI job market**
+**A governed analytics chatbot agent for the job market**
 
-Job Market Radar is an end-to-end analytics application that helps users explore the German entry-level data/AI job market through a chatbot interface. It provides scripts for collecting job data and building a local analytics-ready database, governed analytics tools on top of that data, and a chatbot agent that can use those tools to answer user questions. Instead of relying on unconstrained text generation, the system is built around controlled data access, structured agent behavior, and evidence-backed responses. This ensures that every insight provided is fully inspectable and trustworthy.
+Job Market Radar is an end-to-end analytics application that helps users explore the job market through a chatbot interface. It provides scripts for collecting job data and building a local analytics-ready database, governed analytics tools on top of that data, and a chatbot agent that can use those tools to answer user questions. Instead of relying on unconstrained text generation, the system is built around controlled data access, structured agent behavior, and evidence-backed responses. This ensures that every insight provided is fully inspectable and trustworthy.
 
 Alongside the user-facing application, this project also includes an evaluation pipeline that captures real-world interactions and transforms them into replayable test cases evaluated by an LLM-as-a-judge. This enables deep inspection of the agent's internal workflow, helping to identify bottlenecks in specific nodes and supporting systematic performance tracking when prompts, logic, or underlying models are updated.
 
@@ -30,7 +30,7 @@ The project is designed to demonstrate a product-shaped architecture that combin
 
 ## Product walkthrough
 
-Job Market Radar is designed as an interactive analytics chatbot application with built-in support for agent inspection and evaluation. Users can ask questions about the German entry-level data/AI job market through the chat interface and receive answers grounded in controlled analytics logic rather than unconstrained model responses.
+Job Market Radar is designed as an interactive analytics chatbot application with built-in support for agent inspection and evaluation. Users can ask questions about the job market through the chat interface and receive answers grounded in controlled analytics logic rather than unconstrained model responses.
 
 ![Chat interface](docs/screenshots/chat_interface.jpg)
 
@@ -129,27 +129,27 @@ This approach is driven by two strategic decisions:
 
 ### Clone and set up the environment
 
-    ```bash
-    git clone <YOUR_GITHUB_REPO_URL> job-market-radar
-    cd job-market-radar
+```bash
+git clone https://github.com/VnhNg/job-market-radar.git
+cd job-market-radar
 
-    python -m venv .venv
-    source .venv/Scripts/activate   # Git Bash on Windows
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-    cp .env.example .env
-    ```
+python -m venv .venv
+source .venv/Scripts/activate   # Git Bash on Windows
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+cp .env.example .env
+```
 
 ### Prepare local data
 
 The project needs a local job-posting dataset for the analytics service and chatbot agent. For demonstration, it is built around data collected from the free Adzuna API, but you can also use your own data if it matches the expected downstream structure.
 
 If you want to use Adzuna data, create a free Adzuna developer account, get an application ID and key, and set them in your local `.env` file:
-    ```env
-    ADZUNA_APP_ID=your_app_id_here
-    ADZUNA_APP_KEY=your_app_key_here
-    ADZUNA_COUNTRY=de
-    ```
+```env
+ADZUNA_APP_ID=your_app_id_here
+ADZUNA_APP_KEY=your_app_key_here
+ADZUNA_COUNTRY=de
+```
 
 1. **Bronze: raw data acquisition**
 The bronze stage stores raw request and response files exactly as fetched from the source. Because Adzuna allows at most `results_per_page=50`, larger collections require multiple page requests. For example, to collect about 100 `praktikum data`, 50 `junior data`, and 80 `werkstudent data` postings:
@@ -187,9 +187,9 @@ After this step, the local warehouse is ready for the FastAPI service, the chatb
 ### Run the API
 
 Start the FastAPI service. Keep it running while using the chatbot agent or the evaluation workflow, since both depend on the API for governed analytics access.
-    ```bash
-    python -m uvicorn src.api.main:app --reload
-    ```
+```bash
+python -m uvicorn src.api.main:app --reload
+```
 
 You can optionally open the following endpoints to verify that the service started correctly:
 - http://127.0.0.1:8000/health
@@ -198,9 +198,9 @@ You can optionally open the following endpoints to verify that the service start
 ### Run the app
 
 With the FastAPI service still running, start the Streamlit application in a separate terminal:
-    ```bash
-    python -m streamlit run src/app/ui/streamlit_app.py
-    ```
+```bash
+python -m streamlit run src/app/ui/streamlit_app.py
+```
 The interface should open automatically in your browser. If it does not, open the local Streamlit URL shown in the terminal manually.
 
 ### Run evaluation replay and judging
