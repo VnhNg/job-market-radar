@@ -8,6 +8,26 @@ Alongside the user-facing application, this project also includes an evaluation 
 
 The project is designed to demonstrate a product-shaped architecture that combines data handling, governed analytics access, workflow-based agent orchestration, and practical evaluation for agent quality control.
 
+<details>
+  <summary><strong>Table of Contents</strong></summary>
+
+  - [Product walkthrough](#product-walkthrough)
+  - [Architecture](#architecture)
+    - [Data collection and preparation layer](#data-collection-and-preparation-layer)
+    - [Analytics service layer](#analytics-service-layer)
+    - [Agent layer](#agent-layer)
+    - [Application layer](#application-layer)
+    - [Evaluation workflow](#evaluation-workflow)
+  - [Getting started](#getting-started)
+    - [Clone and set up the environment](#clone-and-set-up-the-environment)
+    - [Prepare local data](#prepare-local-data)
+    - [Run the API](#run-the-api)
+    - [Run the app](#run-the-app)
+    - [Run evaluation replay and judging](#run-evaluation-replay-and-judging)
+    - [Notes](#notes)
+
+</details>
+
 ## Product walkthrough
 
 Job Market Radar is designed as an interactive analytics chatbot application with built-in support for agent inspection and evaluation. Users can ask questions about the German entry-level data/AI job market through the chat interface and receive answers grounded in controlled analytics logic rather than unconstrained model responses.
@@ -16,19 +36,19 @@ Job Market Radar is designed as an interactive analytics chatbot application wit
 
 The application makes the agent process visible. Instead of hiding the reasoning workflow behind a single answer, the system allows users to inspect how a question was processed, which is useful both for trust and for debugging agent behavior.
 
-[![Agent process trace](docs/screenshots/agent_trace_thumb.jpg)](docs/videos/agent_trace.mp4)
+[![Agent process trace](docs/screenshots/agent_trace_thumb.jpg)](https://VnhNg.github.io/job-market-radar/demos/agent-trace/)
 
 Answers can also be inspected together with the underlying evidence. The interface exposes the parameters and results of the governed queries used by the agent, making it possible to see what data supported a response instead of treating the chatbot as a black box.
 
-[![Evidence inspection view](docs/screenshots/evidence_view_thumb.jpg)](docs/videos/evidence_view.mp4)
+[![Evidence inspection view](docs/screenshots/evidence_view_thumb.jpg)](https://VnhNg.github.io/job-market-radar/demos/evidence-view/)
 
 The application supports multiple independent conversation threads, which makes it easier to explore different questions or scenarios without collapsing everything into one running chat history. 
 
-[![Conversation thread management](docs/screenshots/conversation_threads_thumb.jpg)](docs/videos/conversation_threads.mp4)
+[![Conversation thread management](docs/screenshots/conversation_threads_thumb.jpg)](https://VnhNg.github.io/job-market-radar/demos/conversation-threads/)
 
 The interface also supports capturing user turns as evaluation cases, so real interactions can later be replayed and analyzed as part of the evaluation workflow.
 
-[![Capture turn as eval case](docs/screenshots/capture_eval_case_thumb.jpg)](docs/videos/capture_eval_case.mp4)
+[![Capture turn as eval case](docs/screenshots/capture_eval_case_thumb.jpg)](https://VnhNg.github.io/job-market-radar/demos/capture-eval-case/)
 
 Besides the interactive app, the project includes a separate regression evaluation workflow. Captured user turns can be replayed through the agent and reviewed with an LLM judge to identify which workflow steps behaved unexpectedly, making it easier to monitor agent quality and assess changes in prompts, logic, or models.
 
