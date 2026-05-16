@@ -6,7 +6,7 @@ uvicorn==0.40.0
 pandas==2.3.3
 PyYAML==6.0.3
 streamlit==1.56.0
-langgraph==1.0.8
+langgraph==1.0.10rc1
 langgraph-checkpoint==4.0.0
 langgraph-checkpoint-sqlite==3.0.3
 langchain-core==1.2.13
